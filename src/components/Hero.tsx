@@ -33,7 +33,7 @@ export function Hero({ locale }: { locale: Locale }) {
         playsInline
         preload="metadata"
       >
-        <source src="/media/pryzr-launchpad.mp4" type="video/mp4" />
+        <source src="/media/pryzr-launchpad-clean.mp4" type="video/mp4" />
       </video>
       <div aria-hidden className="hero-video-overlay" />
       <div

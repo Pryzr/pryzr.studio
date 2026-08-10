@@ -258,6 +258,23 @@ body {
 .floating-chip-three { bottom: -1rem; left: 21%; height: 2.75rem; width: 2.75rem; background: linear-gradient(145deg, #ffc95d, #b65a11); animation-delay: -3s; }
 
 @media (max-width: 640px) {
+  .hero-background-video {
+    display: block;
+    object-fit: cover;
+    object-position: 58% 25%;
+    opacity: 0.86;
+  }
+
+  .hero-video-overlay {
+    background:
+      linear-gradient(180deg, rgba(9, 11, 20, 0.5) 0%, rgba(9, 11, 20, 0.6) 50%, rgba(9, 11, 20, 0.96) 100%),
+      linear-gradient(90deg, rgba(9, 11, 20, 0.42), rgba(9, 11, 20, 0.1), rgba(9, 11, 20, 0.42));
+  }
+
+  .hero-device-stage {
+    display: none;
+  }
+
   .floating-chip { transform: scale(0.7); }
   .floating-chip-one { left: -1.25rem; }
   .floating-chip-two { right: -1.25rem; }
