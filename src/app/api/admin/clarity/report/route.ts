@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import { adminSessionCookie, verifyAdminSession } from "@/lib/admin-auth";
 
@@ -25,14 +26,10 @@ function isClarityMetric(value: unknown): value is ClarityMetric {
   );
 }
 
-export async function GET() {
-  if (!verifyAdminSession((await cookies()).get(adminSessionCookie)?.value)) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
-
+async function loadClarityReport() {
   const token = process.env.CLARITY_API_TOKEN;
   if (!token) {
-    return NextResponse.json({ error: "Microsoft Clarity is not configured." }, { status: 503 });
+    throw new Error("Microsoft Clarity is not configured.");
   }
 
   const reportUrl = new URL("https://www.clarity.ms/export-data/api/v1/project-live-insights");
@@ -46,36 +43,48 @@ export async function GET() {
   const responseText = await response.text();
 
   if (!response.ok) {
-    console.error(
-      `Microsoft Clarity report request failed with status ${response.status}.`,
-      responseText,
+    throw new Error(
+      response.status === 429
+        ? "Microsoft Clarity's daily Data Export limit has been reached. Try again tomorrow."
+        : `Microsoft Clarity request failed with status ${response.status}.`,
     );
-    return NextResponse.json({ error: "Unable to load Microsoft Clarity." }, { status: 502 });
   }
 
   if (!responseText) {
-    console.error("Microsoft Clarity report request returned an empty response.");
-    return NextResponse.json({ error: "Microsoft Clarity returned no report data." }, { status: 502 });
+    throw new Error("Microsoft Clarity returned no report data.");
   }
 
-  let metrics: ClarityMetric[];
-  try {
-    const parsed: unknown = JSON.parse(responseText);
-    if (!Array.isArray(parsed) || !parsed.every(isClarityMetric)) {
-      throw new Error("Expected an array of metrics.");
-    }
-    metrics = parsed;
-  } catch (error) {
-    console.error("Microsoft Clarity report has an unexpected format.", error);
-    return NextResponse.json({ error: "Microsoft Clarity returned an invalid report." }, { status: 502 });
+  const parsed: unknown = JSON.parse(responseText);
+  if (!Array.isArray(parsed) || !parsed.every(isClarityMetric)) {
+    throw new Error("Microsoft Clarity returned an invalid report.");
   }
+  const metrics = parsed;
 
-  return NextResponse.json({
+  return {
     active_time: getMetricValue(metrics, "EngagementTime", "activeTime"),
     dead_clicks: getMetricValue(metrics, "DeadClickCount", "sessionsCount"),
     pages_per_session: getMetricValue(metrics, "Traffic", "pagesPerSessionPercentage"),
     rage_clicks: getMetricValue(metrics, "RageClickCount", "sessionsCount"),
     scroll_depth: getMetricValue(metrics, "ScrollDepth", "averageScrollDepth"),
     sessions: getMetricValue(metrics, "Traffic", "totalSessionCount"),
-  });
+  };
+}
+
+const getClarityReport = unstable_cache(loadClarityReport, ["clarity-live-insights"], {
+  revalidate: 3600,
+});
+
+export async function GET() {
+  if (!verifyAdminSession((await cookies()).get(adminSessionCookie)?.value)) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  try {
+    return NextResponse.json(await getClarityReport());
+  } catch (error) {
+    console.error("Microsoft Clarity report request failed.", error);
+    const message =
+      error instanceof Error ? error.message : "Unable to load Microsoft Clarity.";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 }
