@@ -22,12 +22,22 @@ export async function GET() {
   const response = await fetch(reportUrl, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const report = await response.json();
+  const responseText = await response.text();
 
   if (!response.ok) {
-    console.error("Microsoft Clarity report request failed.", report);
+    console.error(
+      `Microsoft Clarity report request failed with status ${response.status}.`,
+      responseText,
+    );
     return NextResponse.json({ error: "Unable to load Microsoft Clarity." }, { status: 502 });
   }
 
-  return NextResponse.json(report);
+  if (!responseText) {
+    console.error("Microsoft Clarity report request returned an empty response.");
+    return NextResponse.json({ error: "Microsoft Clarity returned no report data." }, { status: 502 });
+  }
+
+  return new NextResponse(responseText, {
+    headers: { "Content-Type": "application/json" },
+  });
 }
