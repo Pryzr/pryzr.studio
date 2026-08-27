@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 type Report = {
   pageViews: number;
+  visitors: number;
 };
 
 export function VercelAnalyticsReport() {
@@ -29,11 +30,19 @@ export function VercelAnalyticsReport() {
       <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
         Vercel Web Analytics
       </h2>
-      <div className="mt-6 border border-line bg-background p-4">
-        <p className="text-sm text-muted">Page views</p>
-        <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
-          {error || (report ? report.pageViews : "Loading...")}
-        </p>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="border border-line bg-background p-4">
+          <p className="text-sm text-muted">Visitors</p>
+          <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
+            {error || (report ? report.visitors : "Loading...")}
+          </p>
+        </div>
+        <div className="border border-line bg-background p-4">
+          <p className="text-sm text-muted">Page views</p>
+          <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
+            {error || (report ? report.pageViews : "Loading...")}
+          </p>
+        </div>
       </div>
     </section>
   );

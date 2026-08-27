@@ -5,7 +5,10 @@ import { adminSessionCookie, verifyAdminSession } from "@/lib/admin-auth";
 const teamId = "team_2XPDeHUzTlysv1frxqLU9quJ";
 
 type VercelAnalyticsResponse = {
-  data?: number;
+  data?: {
+    pageviews?: number;
+    visitors?: number;
+  };
 };
 
 export async function GET() {
@@ -35,5 +38,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unable to load Vercel Analytics." }, { status: 502 });
   }
 
-  return NextResponse.json({ pageViews: result.data ?? 0 });
+  return NextResponse.json({
+    pageViews: result.data?.pageviews ?? 0,
+    visitors: result.data?.visitors ?? 0,
+  });
 }
