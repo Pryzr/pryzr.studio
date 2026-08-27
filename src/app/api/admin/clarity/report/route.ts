@@ -16,7 +16,7 @@ export async function GET() {
 
   const reportUrl = new URL("https://www.clarity.ms/export-data/api/v1/project-live-insights");
   reportUrl.search = new URLSearchParams({
-    numOfDays: "30",
+    numOfDays: "3",
     projectId: clarityProjectId,
   }).toString();
   const response = await fetch(reportUrl, {

@@ -43,7 +43,7 @@ export function ClarityReport() {
 
   return (
     <section className="mt-10 border border-line bg-surface p-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Last 30 days</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Last 3 days</p>
       <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
         Microsoft Clarity
       </h2>
