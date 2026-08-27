@@ -13,6 +13,7 @@ const metrics = [
   ["Avg. session", 3],
   ["Events", 4],
   ["Conversions", 5],
+  ["Bounce rate", 6],
 ] as const;
 
 export function GoogleAnalyticsReport() {
@@ -66,7 +67,11 @@ export function GoogleAnalyticsReport() {
           <div className="border border-line bg-background p-4" key={label}>
             <p className="text-sm text-muted">{label}</p>
             <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
-              {isLoading ? "Loading..." : (values?.[index]?.value ?? "0")}
+              {isLoading
+                ? "Loading..."
+                : label === "Bounce rate"
+                  ? `${Math.round(Number(values?.[index]?.value ?? 0) * 100)}%`
+                  : (values?.[index]?.value ?? "0")}
             </p>
           </div>
         ))}

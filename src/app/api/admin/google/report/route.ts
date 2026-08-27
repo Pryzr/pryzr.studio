@@ -62,6 +62,7 @@ export async function GET() {
           { name: "averageSessionDuration" },
           { name: "eventCount" },
           { name: "conversions" },
+          { name: "bounceRate" },
         ],
       }),
     },
