@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     httpOnly: true,
     maxAge: 0,
     path: "/",
-    sameSite: "strict",
+    sameSite: "lax",
     secure: true,
   });
   response.cookies.set(googleRefreshTokenCookie, "", {

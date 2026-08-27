@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     httpOnly: true,
     maxAge: adminSessionMaxAge,
     path: "/",
-    sameSite: "strict",
+    sameSite: "lax",
     secure: true,
   });
 
