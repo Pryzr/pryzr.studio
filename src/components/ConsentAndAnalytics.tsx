@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const consentStorageKey = "pryzr-tracking-consent";
+const consentCookieName = "pryzr_tracking_consent";
 const googleAnalyticsId = "G-QQWH900CZH";
 const clarityProjectId = "y8ro7q7kus";
 const redditPixelId = "a2_ipmxh3ti5t5m";
 
 export function hasMarketingConsent() {
-  return window.localStorage.getItem(consentStorageKey) === "accepted";
+  return getStoredConsent() === "accepted";
 }
 
 function getStoredConsent() {
@@ -17,7 +18,16 @@ function getStoredConsent() {
     return null;
   }
 
-  const value = window.localStorage.getItem(consentStorageKey);
+  let value: string | null = null;
+  try {
+    value = window.localStorage.getItem(consentStorageKey);
+  } catch {
+    value = document.cookie
+      .split("; ")
+      .find((cookie) => cookie.startsWith(`${consentCookieName}=`))
+      ?.split("=")[1] ?? null;
+  }
+
   return value === "accepted" || value === "rejected" ? value : null;
 }
 
@@ -135,7 +145,11 @@ export function ConsentAndAnalytics() {
   }, [consent, pathname]);
 
   function saveConsent(value: "accepted" | "rejected") {
-    window.localStorage.setItem(consentStorageKey, value);
+    try {
+      window.localStorage.setItem(consentStorageKey, value);
+    } catch {
+      document.cookie = `${consentCookieName}=${value}; Max-Age=15552000; Path=/; SameSite=Lax; Secure`;
+    }
     setConsent(value);
     setPreferencesOpen(false);
   }
