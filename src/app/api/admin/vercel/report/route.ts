@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { adminSessionCookie, verifyAdminSession } from "@/lib/admin-auth";
 
 const teamId = "team_2XPDeHUzTlysv1frxqLU9quJ";
+const projectId = "prj_4OqK7ILJgKpDRuRfE2vAbilSYEuP";
 
 type VercelAnalyticsResponse = {
   data?: {
@@ -23,10 +24,10 @@ export async function GET() {
 
   const reportUrl = new URL("https://api.vercel.com/v1/query/web-analytics/visits/count");
   reportUrl.search = new URLSearchParams({
-    projectId: "pryzr.studio",
-    since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    projectId,
+    since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     teamId,
-    until: new Date().toISOString(),
+    until: new Date().toISOString().slice(0, 10),
   }).toString();
   const response = await fetch(reportUrl, {
     headers: { Authorization: `Bearer ${token}` },
