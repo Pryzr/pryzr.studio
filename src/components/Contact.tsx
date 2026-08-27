@@ -13,6 +13,7 @@ export function Contact({ locale }: { locale: Locale }) {
     event.preventDefault();
     setSubmissionError("");
     setIsSubmitting(true);
+    const trackingAllowed = hasMarketingConsent();
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -23,7 +24,7 @@ export function Contact({ locale }: { locale: Locale }) {
         ...Object.fromEntries(formData),
         locale,
         eventSourceUrl: window.location.href,
-        marketingConsent: hasMarketingConsent(),
+        marketingConsent: trackingAllowed,
       }),
     });
     const result: { calendarUrl?: string; error?: string } =
@@ -37,7 +38,28 @@ export function Contact({ locale }: { locale: Locale }) {
       return;
     }
 
-    window.location.assign(result.calendarUrl);
+    const calendarUrl = result.calendarUrl;
+
+    if (!trackingAllowed) {
+      window.location.assign(calendarUrl);
+      return;
+    }
+
+    window.clarity?.("event", "strategy_call_submitted");
+    let redirected = false;
+    const redirectToCalendar = () => {
+      if (!redirected) {
+        redirected = true;
+        window.location.assign(calendarUrl);
+      }
+    };
+
+    window.gtag?.("event", "generate_lead", {
+      event_callback: redirectToCalendar,
+      event_timeout: 1000,
+      form_name: "strategy_call",
+    });
+    window.setTimeout(redirectToCalendar, 1000);
   }
 
   return (
