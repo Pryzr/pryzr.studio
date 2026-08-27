@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { GoogleAnalyticsReport } from "@/components/GoogleAnalyticsReport";
 import { ClarityReport } from "@/components/ClarityReport";
+import { VercelAnalyticsReport } from "@/components/VercelAnalyticsReport";
 import { adminSessionCookie, verifyAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -62,6 +63,7 @@ export default async function AdminPage() {
 
         <GoogleAnalyticsReport />
         <ClarityReport />
+        <VercelAnalyticsReport />
 
         <section className="mt-10 border border-line bg-surface p-6">
           <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
