@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const consentStorageKey = "pryzr-tracking-consent";
 const googleAnalyticsId = "G-QQWH900CZH";
@@ -112,6 +113,7 @@ export function CookiePreferencesButton({ locale }: { locale: "en" | "es" }) {
 }
 
 export function ConsentAndAnalytics() {
+  const pathname = usePathname();
   const [consent, setConsent] = useState<"accepted" | "rejected" | null>(getStoredConsent);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
 
@@ -122,7 +124,7 @@ export function ConsentAndAnalytics() {
   }, []);
 
   useEffect(() => {
-    if (consent !== "accepted") {
+    if (pathname.startsWith("/admin") || consent !== "accepted") {
       return;
     }
 
@@ -130,7 +132,7 @@ export function ConsentAndAnalytics() {
     startClarity();
     startRedditPixel();
     return startEngagementTracking();
-  }, [consent]);
+  }, [consent, pathname]);
 
   function saveConsent(value: "accepted" | "rejected") {
     window.localStorage.setItem(consentStorageKey, value);
@@ -138,7 +140,7 @@ export function ConsentAndAnalytics() {
     setPreferencesOpen(false);
   }
 
-  if (consent && !preferencesOpen) {
+  if (pathname.startsWith("/admin") || (consent && !preferencesOpen)) {
     return null;
   }
 
