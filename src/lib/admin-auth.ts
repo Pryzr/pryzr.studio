@@ -1,10 +1,20 @@
-import { createHmac, scrypt as scryptCallback, timingSafeEqual } from "crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+  scrypt as scryptCallback,
+  timingSafeEqual,
+} from "crypto";
 import { promisify } from "util";
 
 const scrypt = promisify(scryptCallback);
 const sessionDurationSeconds = 60 * 60 * 8;
 
 export const adminSessionCookie = "pryzr_admin_session";
+export const googleOAuthStateCookie = "pryzr_google_oauth_state";
+export const googleRefreshTokenCookie = "pryzr_google_refresh_token";
 
 type Session = {
   expiresAt: number;
@@ -80,3 +90,41 @@ export function verifyAdminSession(value: string | undefined) {
 }
 
 export const adminSessionMaxAge = sessionDurationSeconds;
+
+export function encryptSecret(value: string) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv(
+    "aes-256-gcm",
+    createHash("sha256").update(getSessionSecret()).digest(),
+    iv,
+  );
+  const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
+
+  return `${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${encrypted.toString("base64url")}`;
+}
+
+export function decryptSecret(value: string | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const [iv, authTag, encrypted] = value.split(".");
+  if (!iv || !authTag || !encrypted) {
+    return null;
+  }
+
+  try {
+    const decipher = createDecipheriv(
+      "aes-256-gcm",
+      createHash("sha256").update(getSessionSecret()).digest(),
+      Buffer.from(iv, "base64url"),
+    );
+    decipher.setAuthTag(Buffer.from(authTag, "base64url"));
+    return Buffer.concat([
+      decipher.update(Buffer.from(encrypted, "base64url")),
+      decipher.final(),
+    ]).toString("utf8");
+  } catch {
+    return null;
+  }
+}
