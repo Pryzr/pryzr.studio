@@ -18,7 +18,11 @@ export function Contact({ locale }: { locale: Locale }) {
     const response = await fetch("/api/strategy-call", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...Object.fromEntries(formData), locale }),
+      body: JSON.stringify({
+        ...Object.fromEntries(formData),
+        locale,
+        eventSourceUrl: window.location.href,
+      }),
     });
     const result: { calendarUrl?: string; error?: string } =
       await response.json();

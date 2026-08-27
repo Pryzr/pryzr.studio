@@ -1,7 +1,9 @@
+import { createHash, randomUUID } from "crypto";
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const redditPixelId = "a2_ipmxh3ti5t5m";
 
 function getText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -21,6 +23,78 @@ function escapeHtml(value: string) {
   );
 }
 
+function hashEmail(email: string) {
+  const [local, domain] = email.toLowerCase().split("@");
+  const normalized = `${local.replace(/\./g, "").split("+")[0]}@${domain}`;
+
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+function getCookie(request: Request, name: string) {
+  const cookie = request.headers.get("cookie") ?? "";
+  const value = cookie
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+
+  return value ? decodeURIComponent(value) : undefined;
+}
+
+async function trackRedditLead(request: Request, email: string, eventSourceUrl: string) {
+  const accessToken = process.env.REDDIT_CONVERSION_ACCESS_TOKEN;
+
+  if (!accessToken) {
+    console.error("Strategy-call form is missing Reddit conversion configuration.");
+    return;
+  }
+
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const ipAddress = forwardedFor?.split(",")[0]?.trim();
+  const userAgent = request.headers.get("user-agent");
+  const redditUuid = getCookie(request, "rdt_uuid");
+
+  try {
+    const response = await fetch(
+      `https://ads-api.reddit.com/api/v3/pixels/${redditPixelId}/conversion_events`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "User-Agent": "web:pryzr-studio-capi:v1.0.0",
+        },
+        body: JSON.stringify({
+          data: [
+            {
+              event_at: Date.now(),
+              action_source: "WEBSITE",
+              event_source_url: eventSourceUrl,
+              type: { tracking_type: "LEAD" },
+              metadata: { conversion_id: randomUUID() },
+              user: {
+                email: hashEmail(email),
+                ...(ipAddress ? { ip_address: ipAddress } : {}),
+                ...(userAgent ? { user_agent: userAgent } : {}),
+                ...(redditUuid ? { uuid: redditUuid } : {}),
+              },
+            },
+          ],
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      console.error(
+        `Reddit lead conversion failed with status ${response.status}.`,
+        await response.text(),
+      );
+    }
+  } catch (error) {
+    console.error("Reddit lead conversion request failed.", error);
+  }
+}
+
 export async function POST(request: Request) {
   let payload: unknown;
 
@@ -34,7 +108,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid submission." }, { status: 400 });
   }
 
-  const { name, email, company, budget, message } = payload as Record<
+  const { name, email, company, budget, message, eventSourceUrl } = payload as Record<
     string,
     unknown
   >;
@@ -45,6 +119,7 @@ export async function POST(request: Request) {
     budget: getText(budget),
     message: getText(message),
   };
+  const sourceUrl = getText(eventSourceUrl);
 
   if (!lead.name || !emailPattern.test(lead.email)) {
     return NextResponse.json(
@@ -89,6 +164,8 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
+
+  await trackRedditLead(request, lead.email, sourceUrl);
 
   return NextResponse.json({ calendarUrl });
 }
