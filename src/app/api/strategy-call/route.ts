@@ -65,21 +65,19 @@ async function trackRedditLead(request: Request, email: string, eventSourceUrl: 
           "User-Agent": "web:pryzr-studio-capi:v1.0.0",
         },
         body: JSON.stringify({
-          data: [
-            {
-              event_at: Date.now(),
-              action_source: "WEBSITE",
-              event_source_url: eventSourceUrl,
-              type: { tracking_type: "LEAD" },
-              metadata: { conversion_id: randomUUID() },
-              user: {
-                email: hashEmail(email),
-                ...(ipAddress ? { ip_address: ipAddress } : {}),
-                ...(userAgent ? { user_agent: userAgent } : {}),
-                ...(redditUuid ? { uuid: redditUuid } : {}),
-              },
+          data: {
+            event_at: Date.now(),
+            action_source: "WEBSITE",
+            event_source_url: eventSourceUrl,
+            type: { tracking_type: "LEAD" },
+            metadata: { conversion_id: randomUUID() },
+            user: {
+              email: hashEmail(email),
+              ...(ipAddress ? { ip_address: ipAddress } : {}),
+              ...(userAgent ? { user_agent: userAgent } : {}),
+              ...(redditUuid ? { uuid: redditUuid } : {}),
             },
-          ],
+          },
         }),
       },
     );
