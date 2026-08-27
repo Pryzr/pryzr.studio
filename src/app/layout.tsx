@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Figtree, Syne } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ConsentAndAnalytics } from "@/components/ConsentAndAnalytics";
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col font-sans">
         {children}
+        <Analytics />
         <ConsentAndAnalytics />
       </body>
     </html>
