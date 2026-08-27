@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Figtree, Syne } from "next/font/google";
+import { ConsentAndAnalytics } from "@/components/ConsentAndAnalytics";
 import "./globals.css";
 
 const display = Syne({
@@ -26,19 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${display.variable} ${body.variable} h-full antialiased`}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js";t.async=!0;var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
-              rdt("init","a2_ipmxh3ti5t5m");
-              rdt("track","PageVisit");
-            `,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}
+        <ConsentAndAnalytics />
       </body>
     </html>
   );

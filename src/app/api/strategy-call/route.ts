@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid submission." }, { status: 400 });
   }
 
-  const { name, email, company, budget, message, eventSourceUrl } = payload as Record<
+  const { name, email, company, budget, message, eventSourceUrl, marketingConsent } = payload as Record<
     string,
     unknown
   >;
@@ -167,7 +167,9 @@ export async function POST(request: Request) {
     );
   }
 
-  await trackRedditLead(request, lead.email, sourceUrl);
+  if (marketingConsent === true) {
+    await trackRedditLead(request, lead.email, sourceUrl);
+  }
 
   return NextResponse.json({ calendarUrl });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { hasMarketingConsent } from "@/components/ConsentAndAnalytics";
 import type { Locale } from "@/lib/locale";
 
 export function Contact({ locale }: { locale: Locale }) {
@@ -22,6 +23,7 @@ export function Contact({ locale }: { locale: Locale }) {
         ...Object.fromEntries(formData),
         locale,
         eventSourceUrl: window.location.href,
+        marketingConsent: hasMarketingConsent(),
       }),
     });
     const result: { calendarUrl?: string; error?: string } =

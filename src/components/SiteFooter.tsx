@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/locale";
+import { CookiePreferencesButton } from "@/components/ConsentAndAnalytics";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   return (
@@ -8,6 +9,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           PRYZR
         </p>
         <p>{locale === "es" ? "La base operativa para marcas independientes de casino social." : "The operating foundation for independent social casino brands."}</p>
+        <CookiePreferencesButton locale={locale} />
         <p>&copy; {new Date().getFullYear()} PRYZR.studio</p>
       </div>
     </footer>
