@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Figtree, Syne } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ConsentAndAnalytics } from "@/components/ConsentAndAnalytics";
+import { VercelEngagementTracking } from "@/components/VercelEngagementTracking";
 import "./globals.css";
 
 const display = Syne({
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <Analytics />
+        <VercelEngagementTracking />
         <ConsentAndAnalytics />
       </body>
     </html>
