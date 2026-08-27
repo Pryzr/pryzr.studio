@@ -11,6 +11,10 @@ type GoogleTokenResponse = {
   access_token?: string;
 };
 
+type GoogleRealtimeReport = {
+  rows?: Array<{ metricValues?: Array<{ value?: string }> }>;
+};
+
 export async function GET() {
   const cookieStore = await cookies();
   if (!verifyAdminSession(cookieStore.get(adminSessionCookie)?.value)) {
@@ -73,5 +77,24 @@ export async function GET() {
     return NextResponse.json({ error: "Unable to load Google Analytics." }, { status: 502 });
   }
 
-  return NextResponse.json(report);
+  const realtimeResponse = await fetch(
+    `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runRealtimeReport`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ metrics: [{ name: "activeUsers" }] }),
+    },
+  );
+  const realtimeReport = (await realtimeResponse.json()) as GoogleRealtimeReport;
+  if (!realtimeResponse.ok) {
+    console.error("Google Analytics realtime report request failed.", realtimeReport);
+  }
+
+  return NextResponse.json({
+    ...report,
+    realtimeActiveUsers: realtimeReport.rows?.[0]?.metricValues?.[0]?.value ?? "0",
+  });
 }

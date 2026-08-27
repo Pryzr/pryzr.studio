@@ -60,6 +60,7 @@ function startClarity() {
       window.clarityQueue = window.clarityQueue || [];
       window.clarityQueue.push(args);
     });
+  window.clarity("consent");
   appendScript("microsoft-clarity", `https://www.clarity.ms/tag/${clarityProjectId}`);
 }
 

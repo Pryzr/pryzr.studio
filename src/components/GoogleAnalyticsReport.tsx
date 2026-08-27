@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 type Report = {
+  realtimeActiveUsers?: string;
   rows?: Array<{ metricValues?: Array<{ value?: string }> }>;
 };
 
@@ -61,6 +62,9 @@ export function GoogleAnalyticsReport() {
             Google Analytics 4
           </h2>
         </div>
+        <p className="text-sm text-muted">
+          Live users: <span className="font-semibold text-foreground">{report?.realtimeActiveUsers ?? "Loading..."}</span>
+        </p>
       </div>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map(([label, index]) => (
