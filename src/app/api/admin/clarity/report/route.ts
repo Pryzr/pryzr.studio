@@ -4,6 +4,27 @@ import { adminSessionCookie, verifyAdminSession } from "@/lib/admin-auth";
 
 const clarityProjectId = "y8ro7q7kus";
 
+type ClarityMetric = {
+  information: Array<Record<string, number | null>>;
+  metricName: string;
+};
+
+function getMetricValue(metrics: ClarityMetric[], metricName: string, field: string) {
+  const value = metrics.find((metric) => metric.metricName === metricName)?.information[0]?.[field];
+  return typeof value === "number" ? value : 0;
+}
+
+function isClarityMetric(value: unknown): value is ClarityMetric {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "metricName" in value &&
+    "information" in value &&
+    typeof value.metricName === "string" &&
+    Array.isArray(value.information)
+  );
+}
+
 export async function GET() {
   if (!verifyAdminSession((await cookies()).get(adminSessionCookie)?.value)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -37,7 +58,24 @@ export async function GET() {
     return NextResponse.json({ error: "Microsoft Clarity returned no report data." }, { status: 502 });
   }
 
-  return new NextResponse(responseText, {
-    headers: { "Content-Type": "application/json" },
+  let metrics: ClarityMetric[];
+  try {
+    const parsed: unknown = JSON.parse(responseText);
+    if (!Array.isArray(parsed) || !parsed.every(isClarityMetric)) {
+      throw new Error("Expected an array of metrics.");
+    }
+    metrics = parsed;
+  } catch (error) {
+    console.error("Microsoft Clarity report has an unexpected format.", error);
+    return NextResponse.json({ error: "Microsoft Clarity returned an invalid report." }, { status: 502 });
+  }
+
+  return NextResponse.json({
+    active_time: getMetricValue(metrics, "EngagementTime", "activeTime"),
+    dead_clicks: getMetricValue(metrics, "DeadClickCount", "sessionsCount"),
+    pages_per_session: getMetricValue(metrics, "Traffic", "pagesPerSessionPercentage"),
+    rage_clicks: getMetricValue(metrics, "RageClickCount", "sessionsCount"),
+    scroll_depth: getMetricValue(metrics, "ScrollDepth", "averageScrollDepth"),
+    sessions: getMetricValue(metrics, "Traffic", "totalSessionCount"),
   });
 }
