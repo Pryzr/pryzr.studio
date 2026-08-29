@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 
 const consentStorageKey = "pryzr-tracking-consent";
@@ -33,6 +33,20 @@ function getStoredConsent() {
       .find((cookie) => cookie.startsWith(`${consentCookieName}=`))
       ?.split("=")[1] ?? null;
   return cookieValue === "accepted" || cookieValue === "rejected" ? cookieValue : null;
+}
+
+function subscribeToConsent(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener("pryzr-consent-changed", onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener("pryzr-consent-changed", onStoreChange);
+  };
+}
+
+function getServerConsent() {
+  return null;
 }
 
 function appendScript(id: string, source: string) {
@@ -131,7 +145,7 @@ export function CookiePreferencesButton({ locale }: { locale: "en" | "es" }) {
 
 export function ConsentAndAnalytics() {
   const pathname = usePathname();
-  const [consent, setConsent] = useState<"accepted" | "rejected" | null>(getStoredConsent);
+  const consent = useSyncExternalStore(subscribeToConsent, getStoredConsent, getServerConsent);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   useEffect(() => {
@@ -156,7 +170,7 @@ export function ConsentAndAnalytics() {
       window.localStorage.setItem(consentStorageKey, value);
     } catch {}
     document.cookie = `${consentCookieName}=${value}; Max-Age=15552000; Path=/; SameSite=Lax; Secure`;
-    setConsent(value);
+    window.dispatchEvent(new Event("pryzr-consent-changed"));
     setPreferencesOpen(false);
   }
 
