@@ -21,14 +21,18 @@ function getStoredConsent() {
   let value: string | null = null;
   try {
     value = window.localStorage.getItem(consentStorageKey);
-  } catch {
-    value = document.cookie
+  } catch {}
+
+  if (value === "accepted" || value === "rejected") {
+    return value;
+  }
+
+  const cookieValue =
+    document.cookie
       .split("; ")
       .find((cookie) => cookie.startsWith(`${consentCookieName}=`))
       ?.split("=")[1] ?? null;
-  }
-
-  return value === "accepted" || value === "rejected" ? value : null;
+  return cookieValue === "accepted" || cookieValue === "rejected" ? cookieValue : null;
 }
 
 function appendScript(id: string, source: string) {
@@ -150,9 +154,8 @@ export function ConsentAndAnalytics() {
   function saveConsent(value: "accepted" | "rejected") {
     try {
       window.localStorage.setItem(consentStorageKey, value);
-    } catch {
-      document.cookie = `${consentCookieName}=${value}; Max-Age=15552000; Path=/; SameSite=Lax; Secure`;
-    }
+    } catch {}
+    document.cookie = `${consentCookieName}=${value}; Max-Age=15552000; Path=/; SameSite=Lax; Secure`;
     setConsent(value);
     setPreferencesOpen(false);
   }
@@ -164,30 +167,33 @@ export function ConsentAndAnalytics() {
   return (
     <section
       aria-label="Cookie preferences"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl border border-line bg-surface p-5 shadow-2xl md:inset-x-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
     >
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-foreground">
-        Your privacy choices
-      </h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        With your permission, we use Google Analytics, Microsoft Clarity, and Reddit to understand visits,
-        engagement, location at a broad level, and advertising performance.
-      </p>
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          className="rounded-sm border border-line px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-accent"
-          onClick={() => saveConsent("rejected")}
-        >
-          Reject optional tracking
-        </button>
-        <button
-          type="button"
-          className="rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-white"
-          onClick={() => saveConsent("accepted")}
-        >
-          Accept analytics and advertising
-        </button>
+      <div className="w-full max-w-xl border border-line bg-surface p-6 shadow-2xl sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Help us improve Pryzr</p>
+        <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
+          Your privacy choices
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          Allow optional analytics to help us understand visits, engagement, and advertising performance. We use
+          Google Analytics, Microsoft Clarity, and Reddit only with your permission.
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            className="rounded-sm border border-line px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-accent"
+            onClick={() => saveConsent("rejected")}
+          >
+            Reject optional tracking
+          </button>
+          <button
+            type="button"
+            className="rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-white"
+            onClick={() => saveConsent("accepted")}
+          >
+            Allow analytics and advertising
+          </button>
+        </div>
       </div>
     </section>
   );
