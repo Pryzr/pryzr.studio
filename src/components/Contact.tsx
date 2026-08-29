@@ -6,12 +6,15 @@ import type { Locale } from "@/lib/locale";
 
 export function Contact({ locale }: { locale: Locale }) {
   const isSpanish = locale === "es";
+  const [inquiryType, setInquiryType] = useState<"call" | "overview">("call");
   const [submissionError, setSubmissionError] = useState("");
+  const [submissionSuccess, setSubmissionSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmissionError("");
+    setSubmissionSuccess("");
     setIsSubmitting(true);
     const trackingAllowed = hasMarketingConsent();
 
@@ -22,6 +25,7 @@ export function Contact({ locale }: { locale: Locale }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...Object.fromEntries(formData),
+        inquiryType,
         locale,
         eventSourceUrl: window.location.href,
         marketingConsent: trackingAllowed,
@@ -30,10 +34,26 @@ export function Contact({ locale }: { locale: Locale }) {
     const result: { calendarUrl?: string; error?: string } =
       await response.json();
 
-    if (!response.ok || !result.calendarUrl) {
+    if (!response.ok) {
       setSubmissionError(
         result.error ?? (isSpanish ? "No pudimos enviar tu solicitud. Inténtalo de nuevo." : "We could not send your request. Please try again."),
       );
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (inquiryType === "overview") {
+      setSubmissionSuccess(
+        isSpanish
+          ? "Gracias. Nos pondremos en contacto con tu resumen de preparación para el lanzamiento."
+          : "Thank you. We will be in touch with your launch-readiness overview.",
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!result.calendarUrl) {
+      setSubmissionError(isSpanish ? "No pudimos continuar con tu solicitud. Inténtalo de nuevo." : "We could not continue your request. Please try again.");
       setIsSubmitting(false);
       return;
     }
@@ -76,10 +96,22 @@ export function Contact({ locale }: { locale: Locale }) {
           {isSpanish ? "Llamada estratégica" : "Strategy call"}
         </p>
         <h2 className="mt-4 max-w-xl font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          {isSpanish ? "¿Listo para crear tu marca de casino social?" : "Ready to build your social casino brand?"}
+          {inquiryType === "overview"
+            ? isSpanish
+              ? "Obtén una visión general de preparación para el lanzamiento."
+              : "Get a launch-readiness overview."
+            : isSpanish
+              ? "Descubre si Pryzr es ideal para tu lanzamiento."
+              : "See if Pryzr is right for your launch."}
         </h2>
         <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-          {isSpanish ? "Cuéntanos en qué etapa estás. Revisaremos la plataforma, el proceso de lanzamiento y lo que necesitas para llevar tu marca al mercado." : "Tell us where you are in the process. We’ll walk through the platform, launch path, and what it takes to bring your brand live."}
+          {inquiryType === "overview"
+            ? isSpanish
+              ? "Comparte algunos detalles y te enviaremos una visión general de alto nivel para ayudarte a evaluar los próximos pasos."
+              : "Share a few details and we will send a high-level overview to help you evaluate your next steps."
+            : isSpanish
+              ? "Cuéntanos cuándo quieres lanzar. Revisaremos si Pryzr se ajusta a tu visión, cronograma y necesidades operativas."
+              : "Tell us when you want to launch. We will explore whether Pryzr fits your vision, timeline, and operational needs."}
         </p>
 
         <form
@@ -113,73 +145,78 @@ export function Contact({ locale }: { locale: Locale }) {
             />
           </div>
           <div>
-            <label htmlFor="company" className="sr-only">
-              {isSpanish ? "Empresa" : "Company"}
-            </label>
-            <input
-              id="company"
-              name="company"
-              type="text"
-              placeholder={isSpanish ? "Empresa" : "Company"}
-              className="w-full border-b border-line bg-transparent px-0 py-3 text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-            />
-          </div>
-          <div>
-            <label htmlFor="budget" className="sr-only">
-              {isSpanish ? "Inversión prevista" : "Planned investment"}
+            <label htmlFor="launchTiming" className="sr-only">
+              {isSpanish ? "¿Cuándo te gustaría lanzar?" : "How soon would you like to launch?"}
             </label>
             <select
-              id="budget"
-              name="budget"
+              id="launchTiming"
+              name="launchTiming"
               defaultValue=""
               required
               className="w-full border-b border-line bg-transparent px-0 py-3 text-foreground outline-none transition-colors focus:border-accent"
             >
               <option value="" disabled className="bg-surface text-muted">
-                {isSpanish ? "Inversión prevista" : "Planned investment"}
+                {isSpanish ? "¿Cuándo te gustaría lanzar?" : "How soon would you like to launch?"}
               </option>
-              <option value="Exploring options" className="bg-surface">
-                {isSpanish ? "Aún explorando opciones" : "Still exploring"}
+              <option value="Exploring" className="bg-surface">
+                {isSpanish ? "Aún estoy explorando" : "I am still exploring"}
               </option>
-              <option value="Under $50k" className="bg-surface">
-                {isSpanish ? "Menos de $50 mil" : "Under $50k"}
+              <option value="Within 30 days" className="bg-surface">
+                {isSpanish ? "Dentro de 30 días" : "Within 30 days"}
               </option>
-              <option value="$50k-$100k" className="bg-surface">
-                $50k–$100k
+              <option value="1-3 months" className="bg-surface">
+                {isSpanish ? "En 1 a 3 meses" : "In 1-3 months"}
               </option>
-              <option value="$100k-$250k" className="bg-surface">
-                $100k–$250k
+              <option value="3-6 months" className="bg-surface">
+                {isSpanish ? "En 3 a 6 meses" : "In 3-6 months"}
               </option>
-              <option value="$250k+" className="bg-surface">
-                $250k+
+              <option value="6+ months" className="bg-surface">
+                {isSpanish ? "Más de 6 meses" : "6+ months"}
               </option>
             </select>
-          </div>
-          <div>
-            <label htmlFor="message" className="sr-only">
-              {isSpanish ? "Visión de marca" : "Brand vision"}
-            </label>
-            <textarea
-              id="message"
-              name="message"
-              rows={3}
-              placeholder={isSpanish ? "Cuéntanos sobre la marca que quieres lanzar" : "Tell us about the brand you want to launch"}
-              className="w-full resize-y border-b border-line bg-transparent px-0 py-3 text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-            />
           </div>
           <button
             type="submit"
             disabled={isSubmitting}
             className="mt-2 rounded-sm bg-accent px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-white"
           >
-            {isSubmitting ? (isSpanish ? "Enviando tu solicitud..." : "Sending your request...") : (isSpanish ? "Solicita una llamada estratégica" : "Request a strategy call")}
+            {isSubmitting
+              ? isSpanish
+                ? "Enviando tu solicitud..."
+                : "Sending your request..."
+              : inquiryType === "overview"
+                ? isSpanish
+                  ? "Solicitar visión general"
+                  : "Request the overview"
+                : isSpanish
+                  ? "Descubre si Pryzr es ideal"
+                  : "See if Pryzr is right for your launch"}
           </button>
           {submissionError && (
             <p className="text-sm text-rose-300" role="alert">
               {submissionError}
             </p>
           )}
+          {submissionSuccess && <p className="text-sm text-accent" role="status">{submissionSuccess}</p>}
         </form>
+
+        <button
+          type="button"
+          className="mt-6 text-sm text-muted underline decoration-accent/50 underline-offset-4 transition-colors hover:text-foreground"
+          onClick={() => {
+            setInquiryType(inquiryType === "call" ? "overview" : "call");
+            setSubmissionError("");
+            setSubmissionSuccess("");
+          }}
+        >
+          {inquiryType === "call"
+            ? isSpanish
+              ? "¿Aún no estás listo para una llamada? Solicita una visión general de preparación."
+              : "Not ready for a call? Request a launch-readiness overview."
+            : isSpanish
+              ? "¿Prefieres hablarlo? Descubre si Pryzr es ideal para tu lanzamiento."
+              : "Prefer to talk it through? See if Pryzr is right for your launch."}
+        </button>
 
         <p className="mt-8 text-sm text-muted">
           {isSpanish ? "O escribe a " : "Or email "}

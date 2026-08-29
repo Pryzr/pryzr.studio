@@ -167,9 +167,9 @@ export function ConsentAndAnalytics() {
   return (
     <section
       aria-label="Cookie preferences"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
     >
-      <div className="w-full max-w-xl border border-line bg-surface p-6 shadow-2xl sm:p-8">
+      <div className="pointer-events-auto w-full max-w-xl border border-line bg-surface p-6 shadow-2xl sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Help us improve Pryzr</p>
         <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
           Your privacy choices

@@ -31,10 +31,16 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             href={`${prefix}#contact`}
             className="rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-white"
           >
-            {isSpanish ? "Agenda una llamada" : "Book a strategy call"}
+            {isSpanish ? "Ver si Pryzr es ideal" : "See if Pryzr fits"}
           </a>
         </div>
       </div>
+      <a
+        href={`${prefix}#contact`}
+        className="fixed inset-x-4 bottom-4 z-40 rounded-sm bg-accent px-4 py-3 text-center text-sm font-semibold text-background shadow-xl transition-colors hover:bg-white md:hidden"
+      >
+        {isSpanish ? "Descubre si Pryzr es ideal para tu lanzamiento" : "See if Pryzr is right for your launch"}
+      </a>
     </header>
   );
 }

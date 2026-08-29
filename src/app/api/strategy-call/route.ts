@@ -110,22 +110,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid submission." }, { status: 400 });
   }
 
-  const { name, email, company, budget, message, eventSourceUrl, marketingConsent } = payload as Record<
+  const { name, email, inquiryType, launchTiming, eventSourceUrl, marketingConsent } = payload as Record<
     string,
     unknown
   >;
   const lead = {
     name: getText(name),
     email: getText(email),
-    company: getText(company),
-    budget: getText(budget),
-    message: getText(message),
+    inquiryType: getText(inquiryType) === "overview" ? "overview" : "call",
+    launchTiming: getText(launchTiming),
   };
   const sourceUrl = getText(eventSourceUrl);
 
-  if (!lead.name || !emailPattern.test(lead.email)) {
+  if (!lead.name || !emailPattern.test(lead.email) || !lead.launchTiming) {
     return NextResponse.json(
-      { error: "Enter your name and a valid work email." },
+      { error: "Enter your name, a valid work email, and launch timing." },
       { status: 400 },
     );
   }
@@ -148,14 +147,12 @@ export async function POST(request: Request) {
     from,
     to,
     replyTo: lead.email,
-    subject: `New Pryzr Studio lead: ${lead.name}`,
+    subject: `New Pryzr Studio ${lead.inquiryType === "overview" ? "overview request" : "strategy-call lead"}: ${lead.name}`,
     html: `
-      <h1>New strategy-call request</h1>
+      <h1>New Pryzr Studio ${lead.inquiryType === "overview" ? "launch-readiness overview request" : "strategy-call request"}</h1>
       <p><strong>Name:</strong> ${escapeHtml(lead.name)}</p>
       <p><strong>Email:</strong> ${escapeHtml(lead.email)}</p>
-      <p><strong>Company:</strong> ${escapeHtml(lead.company || "Not provided")}</p>
-      <p><strong>Planned investment:</strong> ${escapeHtml(lead.budget || "Not provided")}</p>
-      <p><strong>Brand vision:</strong><br>${escapeHtml(lead.message || "Not provided").replace(/\n/g, "<br>")}</p>
+      <p><strong>Launch timing:</strong> ${escapeHtml(lead.launchTiming)}</p>
     `,
   });
 
@@ -171,5 +168,5 @@ export async function POST(request: Request) {
     await trackRedditLead(request, lead.email, sourceUrl);
   }
 
-  return NextResponse.json({ calendarUrl });
+  return NextResponse.json(lead.inquiryType === "overview" ? { submitted: true } : { calendarUrl });
 }

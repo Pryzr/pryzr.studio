@@ -3,27 +3,27 @@ import type { Locale } from "@/lib/locale";
 const capabilities = {
   en: [
   {
-    title: "Operator command center",
-    body: "Run player operations, promotions, reporting, and configuration from a control plane built for white-label teams.",
+    title: "Operate from one place",
+    body: "Coordinate player operations, promotions, reporting, and configuration without stitching together disconnected tools.",
   },
   {
-    title: "CRM, VIP, and gamification",
-    body: "Give your team the tools to recognize loyal players, create engagement loops, and build lasting player relationships.",
+    title: "Build player value",
+    body: "Use CRM, VIP, and gamification tools to recognize loyal players and create stronger engagement loops.",
   },
   {
-    title: "Geofencing and controls",
-    body: "Operate with location-aware access controls and the practical infrastructure required to manage a growing brand.",
+    title: "Grow with control",
+    body: "Use location-aware access controls, reporting, and practical compliance guidance as your brand develops.",
   },
   {
-    title: "Payments and operations",
-    body: "Connect with trusted banking and processing partners while Pryzr helps simplify the operational work behind launch.",
+    title: "Launch with coordinated operations",
+    body: "Bring together payments, support, and operational workflows with a team that helps manage the moving parts.",
   },
   ],
   es: [
-    { title: "Centro de control del operador", body: "Gestiona operaciones de jugadores, promociones, informes y configuración desde un centro de control creado para equipos de marca blanca." },
-    { title: "CRM, VIP y gamificación", body: "Dale a tu equipo herramientas para reconocer jugadores leales, crear ciclos de interacción y construir relaciones duraderas." },
-    { title: "Geolocalización y controles", body: "Opera con controles de acceso según la ubicación y la infraestructura práctica necesaria para gestionar una marca en crecimiento." },
-    { title: "Pagos y operaciones", body: "Conéctate con socios bancarios y de procesamiento confiables mientras Pryzr ayuda a simplificar el trabajo operativo detrás del lanzamiento." },
+    { title: "Opera desde un solo lugar", body: "Coordina operaciones de jugadores, promociones, informes y configuración sin unir herramientas desconectadas." },
+    { title: "Crea valor para el jugador", body: "Usa CRM, VIP y gamificación para reconocer jugadores leales y crear ciclos de interacción más sólidos." },
+    { title: "Crece con control", body: "Usa controles de acceso según la ubicación, informes y orientación práctica de cumplimiento mientras tu marca evoluciona." },
+    { title: "Lanza con operaciones coordinadas", body: "Integra pagos, soporte y flujos operativos con un equipo que ayuda a gestionar las partes necesarias." },
   ],
 };
 
@@ -36,10 +36,10 @@ export function Platform({ locale }: { locale: Locale }) {
           Platform
         </p>
         <h2 className="mt-4 max-w-2xl font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          {isSpanish ? "La base operativa detrás de tu marca." : "The operating foundation behind your brand."}
+          {isSpanish ? "Todo lo necesario para lanzar y operar con confianza." : "Everything needed to launch and operate with confidence."}
         </h2>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
-          {isSpanish ? "Pryzr es más que una plataforma. Es la tecnología, el soporte operativo y la orientación práctica que hacen que un lanzamiento sea manejable." : "Pryzr is more than a platform. It is the technology, operational support, and practical guidance that help make a launch manageable."}
+          {isSpanish ? "Pryzr reúne la tecnología, el soporte operativo y la orientación práctica que necesitas para convertir una idea de marca en una operación gestionable." : "Pryzr brings together the technology, operational support, and practical guidance needed to turn a brand idea into a manageable operation."}
         </p>
 
         <div className="mt-14 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">

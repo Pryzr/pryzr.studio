@@ -74,7 +74,7 @@ export function Hero({ locale }: { locale: Locale }) {
               href="#contact"
               className="rounded-sm bg-accent px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-white"
             >
-              {isSpanish ? "Agenda una llamada estratégica" : "Book a strategy call"}
+              {isSpanish ? "Descubre si Pryzr es ideal para tu lanzamiento" : "See if Pryzr is right for your launch"}
             </a>
             <a
               href="#launch-path"
@@ -103,6 +103,11 @@ export function Hero({ locale }: { locale: Locale }) {
               {isSpanish ? "CRM, VIP, gamificación y geolocalización" : "CRM, VIP, gamification, and geofencing"}
             </p>
           </div>
+          <p className="mt-6 max-w-xl text-sm leading-relaxed text-foreground/80">
+            {isSpanish
+              ? "Una base de lanzamiento integral para equipos que necesitan coordinar marca, juegos, operaciones y controles, no solo un sitio web."
+              : "A complete launch foundation for teams coordinating brand, games, operations, and controls - not just a website."}
+          </p>
         </div>
         </div>
 
