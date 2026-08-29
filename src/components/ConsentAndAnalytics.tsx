@@ -54,12 +54,14 @@ function startGoogleAnalytics() {
 }
 
 function startClarity() {
-  window.clarity =
-    window.clarity ||
-    ((...args: unknown[]) => {
-      window.clarityQueue = window.clarityQueue || [];
-      window.clarityQueue.push(args);
-    });
+  if (!window.clarity) {
+    const clarity = ((...args: unknown[]) => {
+      clarity.q.push(args);
+    }) as ClarityFunction;
+    clarity.q = [];
+    window.clarity = clarity;
+  }
+
   window.clarity("consent");
   appendScript("microsoft-clarity", `https://www.clarity.ms/tag/${clarityProjectId}`);
 }
@@ -192,9 +194,12 @@ export function ConsentAndAnalytics() {
 }
 
 declare global {
+  type ClarityFunction = ((...args: unknown[]) => void) & {
+    q: unknown[][];
+  };
+
   interface Window {
-    clarity?: (...args: unknown[]) => void;
-    clarityQueue?: unknown[][];
+    clarity?: ClarityFunction;
     dataLayer?: unknown[][];
     gtag?: (...args: unknown[]) => void;
     rdt?: ((...args: unknown[]) => void) & { queue: unknown[][] };
