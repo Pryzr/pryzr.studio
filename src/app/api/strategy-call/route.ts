@@ -1,6 +1,11 @@
 import { createHash, randomUUID } from "crypto";
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
+import {
+  createReferralLead,
+  findReferralPartnerByCode,
+  referralAttributionCookie,
+} from "@/lib/referrals";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const redditPixelId = "a2_ipmxh3ti5t5m";
@@ -110,14 +115,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid submission." }, { status: 400 });
   }
 
-  const { name, email, inquiryType, launchTiming, eventSourceUrl, marketingConsent } = payload as Record<
+  const {
+    name,
+    email,
+    inquiryType: submittedInquiryType,
+    launchTiming,
+    eventSourceUrl,
+    marketingConsent,
+  } = payload as Record<
     string,
     unknown
   >;
-  const lead = {
+  const inquiryType: "call" | "overview" =
+    getText(submittedInquiryType) === "overview" ? "overview" : "call";
+  const lead: {
+    name: string;
+    email: string;
+    inquiryType: "call" | "overview";
+    launchTiming: string;
+  } = {
     name: getText(name),
     email: getText(email),
-    inquiryType: getText(inquiryType) === "overview" ? "overview" : "call",
+    inquiryType,
     launchTiming: getText(launchTiming),
   };
   const sourceUrl = getText(eventSourceUrl);
@@ -166,6 +185,31 @@ export async function POST(request: Request) {
 
   if (marketingConsent === true) {
     await trackRedditLead(request, lead.email, sourceUrl);
+  }
+
+  const referralCode = getCookie(request, referralAttributionCookie);
+  if (referralCode) {
+    try {
+      const partner = await findReferralPartnerByCode(referralCode);
+      if (partner) {
+        await createReferralLead({
+          partnerId: partner.id,
+          name: lead.name,
+          email: lead.email,
+          launchTiming: lead.launchTiming,
+          inquiryType: lead.inquiryType,
+        });
+      }
+    } catch (error) {
+      console.error("Could not save referral attribution for lead.", error);
+      return NextResponse.json(
+        {
+          error:
+            "We could not complete your referral submission. Please contact us directly so we can help.",
+        },
+        { status: 503 },
+      );
+    }
   }
 
   return NextResponse.json(lead.inquiryType === "overview" ? { submitted: true } : { calendarUrl });

@@ -46,7 +46,15 @@ export default async function AdminPage() {
               Analytics admin
             </h1>
           </div>
-          <p className="text-sm text-muted">Signed in as {session.username}</p>
+          <div className="flex items-center gap-4 text-sm">
+            <a
+              className="font-semibold text-accent underline decoration-accent/50 underline-offset-4"
+              href="/admin/referrals"
+            >
+              Referrals
+            </a>
+            <p className="text-muted">Signed in as {session.username}</p>
+          </div>
         </header>
 
         <section className="mt-10 grid gap-5 md:grid-cols-3">

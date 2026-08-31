@@ -10,6 +10,12 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </p>
         <p>{locale === "es" ? "La base operativa para marcas independientes de casino social." : "The operating foundation for independent social casino brands."}</p>
         <CookiePreferencesButton locale={locale} />
+        <a
+          className="transition-colors hover:text-foreground"
+          href="/partner/login"
+        >
+          {locale === "es" ? "Socios" : "Partners"}
+        </a>
         <p>&copy; {new Date().getFullYear()} PRYZR.studio</p>
       </div>
     </footer>
