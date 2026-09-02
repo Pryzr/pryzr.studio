@@ -161,9 +161,14 @@ export function ConsentAndAnalytics() {
 
     startGoogleAnalytics();
     startClarity();
-    startRedditPixel();
     return startEngagementTracking();
   }, [consent, pathname]);
+
+  useEffect(() => {
+    if (!pathname.startsWith("/admin")) {
+      startRedditPixel();
+    }
+  }, [pathname]);
 
   function saveConsent(value: "accepted" | "rejected") {
     try {
@@ -190,7 +195,7 @@ export function ConsentAndAnalytics() {
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           Allow optional analytics to help us understand visits, engagement, and advertising performance. We use
-          Google Analytics, Microsoft Clarity, and Reddit only with your permission.
+          Google Analytics and Microsoft Clarity only with your permission.
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
@@ -198,14 +203,14 @@ export function ConsentAndAnalytics() {
             className="rounded-sm border border-line px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-accent"
             onClick={() => saveConsent("rejected")}
           >
-            Reject optional tracking
+            Reject optional analytics
           </button>
           <button
             type="button"
             className="rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-white"
             onClick={() => saveConsent("accepted")}
           >
-            Allow analytics and advertising
+            Allow optional analytics
           </button>
         </div>
       </div>

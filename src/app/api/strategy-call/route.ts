@@ -115,14 +115,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid submission." }, { status: 400 });
   }
 
-  const {
-    name,
-    email,
-    inquiryType: submittedInquiryType,
-    launchTiming,
-    eventSourceUrl,
-    marketingConsent,
-  } = payload as Record<
+  const { name, email, inquiryType: submittedInquiryType, launchTiming, eventSourceUrl } = payload as Record<
     string,
     unknown
   >;
@@ -183,9 +176,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (marketingConsent === true) {
-    await trackRedditLead(request, lead.email, sourceUrl);
-  }
+  await trackRedditLead(request, lead.email, sourceUrl);
 
   const referralCode = getCookie(request, referralAttributionCookie);
   if (referralCode) {
