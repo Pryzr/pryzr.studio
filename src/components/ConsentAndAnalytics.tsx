@@ -90,9 +90,9 @@ function startRedditPixel() {
   }
 
   const rdt = ((...args: unknown[]) => {
-    rdt.queue.push(args);
-  }) as ((...args: unknown[]) => void) & { queue: unknown[][] };
-  rdt.queue = [];
+    rdt.callQueue.push(args);
+  }) as RedditPixel;
+  rdt.callQueue = [];
   window.rdt = rdt;
   appendScript("reddit-pixel", "https://www.redditstatic.com/ads/pixel.js");
   rdt("init", redditPixelId);
@@ -222,6 +222,10 @@ declare global {
     clarity?: ClarityFunction;
     dataLayer?: unknown[][];
     gtag?: (...args: unknown[]) => void;
-    rdt?: ((...args: unknown[]) => void) & { queue: unknown[][] };
+    rdt?: RedditPixel;
   }
+
+  type RedditPixel = ((...args: unknown[]) => void) & {
+    callQueue: unknown[][];
+  };
 }
