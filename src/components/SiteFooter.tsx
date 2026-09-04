@@ -8,8 +8,18 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <p className="font-[family-name:var(--font-display)] font-semibold tracking-[0.18em] text-foreground">
           PRYZR
         </p>
-        <p>{locale === "es" ? "La base operativa para marcas independientes de casino social." : "The operating foundation for independent social casino brands."}</p>
+        <p>
+          {locale === "es"
+            ? "La base operativa para marcas independientes de casino social."
+            : "The operating foundation for independent social casino brands."}
+        </p>
         <CookiePreferencesButton locale={locale} />
+        <a
+          className="transition-colors hover:text-foreground"
+          href={locale === "es" ? "/es/privacy" : "/privacy"}
+        >
+          {locale === "es" ? "Privacidad" : "Privacy"}
+        </a>
         <a
           className="transition-colors hover:text-foreground"
           href="/partner/login"

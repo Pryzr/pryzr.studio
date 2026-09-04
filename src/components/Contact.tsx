@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { hasMarketingConsent } from "@/components/ConsentAndAnalytics";
 import type { Locale } from "@/lib/locale";
+import { smsConsentDisclosureVersion } from "@/lib/lead";
 
 export function Contact({ locale }: { locale: Locale }) {
   const isSpanish = locale === "es";
@@ -24,10 +25,15 @@ export function Contact({ locale }: { locale: Locale }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...Object.fromEntries(formData),
+        name: formData.get("name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        launchTiming: formData.get("launchTiming"),
+        smsConsent: formData.get("smsConsent") === "on",
+        smsConsentDisclosureVersion,
         inquiryType,
         locale,
-        eventSourceUrl: window.location.href,
+        eventSourceUrl: `${window.location.origin}${window.location.pathname}`,
         marketingConsent: trackingAllowed,
       }),
     });
@@ -36,7 +42,10 @@ export function Contact({ locale }: { locale: Locale }) {
 
     if (!response.ok) {
       setSubmissionError(
-        result.error ?? (isSpanish ? "No pudimos enviar tu solicitud. Inténtalo de nuevo." : "We could not send your request. Please try again."),
+        result.error ??
+          (isSpanish
+            ? "No pudimos enviar tu solicitud. Inténtalo de nuevo."
+            : "We could not send your request. Please try again."),
       );
       setIsSubmitting(false);
       return;
@@ -53,7 +62,11 @@ export function Contact({ locale }: { locale: Locale }) {
     }
 
     if (!result.calendarUrl) {
-      setSubmissionError(isSpanish ? "No pudimos continuar con tu solicitud. Inténtalo de nuevo." : "We could not continue your request. Please try again.");
+      setSubmissionError(
+        isSpanish
+          ? "No pudimos continuar con tu solicitud. Inténtalo de nuevo."
+          : "We could not continue your request. Please try again.",
+      );
       setIsSubmitting(false);
       return;
     }
@@ -115,6 +128,7 @@ export function Contact({ locale }: { locale: Locale }) {
         </p>
 
         <form
+          aria-label={isSpanish ? "Formulario de consulta" : "Inquiry form"}
           className="mt-12 max-w-xl space-y-5"
           onSubmit={handleSubmit}
         >
@@ -132,6 +146,31 @@ export function Contact({ locale }: { locale: Locale }) {
             />
           </div>
           <div>
+            <label
+              htmlFor="phone"
+              className="block text-sm font-medium text-foreground"
+            >
+              {isSpanish ? "Teléfono móvil" : "Mobile phone"}
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              required
+              aria-describedby="phone-guidance"
+              placeholder={isSpanish ? "+34 612 345 678" : "+1 555 123 4567"}
+              pattern="[+][0-9 ().-]{7,24}"
+              className="w-full border-b border-line bg-transparent px-0 py-3 text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+            />
+            <p id="phone-guidance" className="mt-2 text-xs text-muted">
+              {isSpanish
+                ? "Incluye el código de país, por ejemplo, +34 612 345 678."
+                : "Include the country code, for example, +1 555 123 4567."}
+            </p>
+          </div>
+          <div>
             <label htmlFor="email" className="sr-only">
               {isSpanish ? "Email de trabajo" : "Work email"}
             </label>
@@ -146,7 +185,9 @@ export function Contact({ locale }: { locale: Locale }) {
           </div>
           <div>
             <label htmlFor="launchTiming" className="sr-only">
-              {isSpanish ? "¿Cuándo te gustaría lanzar?" : "How soon would you like to launch?"}
+              {isSpanish
+                ? "¿Cuándo te gustaría lanzar?"
+                : "How soon would you like to launch?"}
             </label>
             <select
               id="launchTiming"
@@ -156,7 +197,9 @@ export function Contact({ locale }: { locale: Locale }) {
               className="w-full border-b border-line bg-transparent px-0 py-3 text-foreground outline-none transition-colors focus:border-accent"
             >
               <option value="" disabled className="bg-surface text-muted">
-                {isSpanish ? "¿Cuándo te gustaría lanzar?" : "How soon would you like to launch?"}
+                {isSpanish
+                  ? "¿Cuándo te gustaría lanzar?"
+                  : "How soon would you like to launch?"}
               </option>
               <option value="Exploring" className="bg-surface">
                 {isSpanish ? "Aún estoy explorando" : "I am still exploring"}
@@ -174,6 +217,22 @@ export function Contact({ locale }: { locale: Locale }) {
                 {isSpanish ? "Más de 6 meses" : "6+ months"}
               </option>
             </select>
+          </div>
+          <div className="flex items-start gap-3">
+            <input
+              id="smsConsent"
+              name="smsConsent"
+              type="checkbox"
+              className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
+            />
+            <label
+              htmlFor="smsConsent"
+              className="text-sm leading-relaxed text-muted"
+            >
+              {isSpanish
+                ? "Acepto recibir mensajes de texto de Pryzr sobre mi consulta y los servicios solicitados. Pueden aplicarse tarifas de mensajes y datos. Responde STOP para dejar de recibirlos."
+                : "I agree to receive text messages from Pryzr about my inquiry and requested services. Message and data rates may apply. Reply STOP to opt out."}
+            </label>
           </div>
           <button
             type="submit"
@@ -197,7 +256,11 @@ export function Contact({ locale }: { locale: Locale }) {
               {submissionError}
             </p>
           )}
-          {submissionSuccess && <p className="text-sm text-accent" role="status">{submissionSuccess}</p>}
+          {submissionSuccess && (
+            <p className="text-sm text-accent" role="status">
+              {submissionSuccess}
+            </p>
+          )}
         </form>
 
         <button

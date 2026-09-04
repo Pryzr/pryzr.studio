@@ -194,6 +194,12 @@ export function AdminReferrals({
                     <td className="px-4 py-3">
                       <p className="text-foreground">{lead.name}</p>
                       <p className="mt-1 text-xs text-muted">{lead.email}</p>
+                      {lead.phone && (
+                        <p className="mt-1 text-xs text-muted">{lead.phone}</p>
+                      )}
+                      <p className="mt-1 text-xs text-muted">
+                        SMS: {lead.sms_consent ? "consented" : "not consented"}
+                      </p>
                     </td>
                     <td className="px-4 py-3 text-muted">{lead.launch_timing}</td>
                     <td className="px-4 py-3 capitalize text-muted">{lead.inquiry_type}</td>

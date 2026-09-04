@@ -19,11 +19,15 @@ export type ReferralLead = {
   partner_name?: string;
   name: string;
   email: string;
+  phone: string | null;
   launch_timing: string;
   inquiry_type: "call" | "overview";
   created_at: string;
   status: ReferralStatus;
   qualified_at: string | null;
+  sms_consent: boolean;
+  sms_consent_at: string | null;
+  sms_consent_disclosure_version: string | null;
 };
 
 type ReferralPartnerWithPassword = ReferralPartner & {
@@ -77,6 +81,10 @@ export async function ensureReferralSchema() {
           qualified_at TIMESTAMPTZ
         )
       `;
+      await sql`ALTER TABLE referral_leads ADD COLUMN IF NOT EXISTS phone TEXT`;
+      await sql`ALTER TABLE referral_leads ADD COLUMN IF NOT EXISTS sms_consent BOOLEAN NOT NULL DEFAULT FALSE`;
+      await sql`ALTER TABLE referral_leads ADD COLUMN IF NOT EXISTS sms_consent_at TIMESTAMPTZ`;
+      await sql`ALTER TABLE referral_leads ADD COLUMN IF NOT EXISTS sms_consent_disclosure_version TEXT`;
       await sql`CREATE INDEX IF NOT EXISTS referral_leads_partner_created_idx ON referral_leads (partner_id, created_at DESC)`;
       await sql`CREATE INDEX IF NOT EXISTS referral_leads_status_created_idx ON referral_leads (status, created_at DESC)`;
       await sql`CREATE INDEX IF NOT EXISTS referral_partners_created_idx ON referral_partners (created_at DESC)`;
@@ -103,36 +111,42 @@ export async function findReferralPartnerByCode(code: string) {
   }
 
   const sql = getDatabase();
-  const partners = asRows<ReferralPartner>(await sql`
+  const partners = asRows<ReferralPartner>(
+    await sql`
     SELECT id, name, email, referral_code, created_at
     FROM referral_partners
     WHERE referral_code = ${normalizedCode}
     LIMIT 1
-  `);
+  `,
+  );
   return partners[0] ?? null;
 }
 
 export async function findReferralPartnerById(id: string) {
   await ensureReferralSchema();
   const sql = getDatabase();
-  const partners = asRows<ReferralPartner>(await sql`
+  const partners = asRows<ReferralPartner>(
+    await sql`
     SELECT id, name, email, referral_code, created_at
     FROM referral_partners
     WHERE id = ${id}
     LIMIT 1
-  `);
+  `,
+  );
   return partners[0] ?? null;
 }
 
 export async function findReferralPartnerForAuthentication(email: string) {
   await ensureReferralSchema();
   const sql = getDatabase();
-  const partners = asRows<ReferralPartnerWithPassword>(await sql`
+  const partners = asRows<ReferralPartnerWithPassword>(
+    await sql`
     SELECT id, name, email, referral_code, password_salt, password_hash, created_at
     FROM referral_partners
     WHERE email = ${email.trim().toLowerCase()}
     LIMIT 1
-  `);
+  `,
+  );
   return partners[0] ?? null;
 }
 
@@ -152,7 +166,8 @@ export async function createReferralPartner({
   const normalizedEmail = email.trim().toLowerCase();
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const partners = asRows<ReferralPartner>(await sql`
+    const partners = asRows<ReferralPartner>(
+      await sql`
       INSERT INTO referral_partners (
         id, name, email, referral_code, password_salt, password_hash
       ) VALUES (
@@ -161,11 +176,12 @@ export async function createReferralPartner({
       )
       RETURNING id, name, email, referral_code, created_at
     `.catch((error: unknown) => {
-      if (isUniqueViolation(error) && attempt < 2) {
-        return [];
-      }
-      throw error;
-    }));
+        if (isUniqueViolation(error) && attempt < 2) {
+          return [];
+        }
+        throw error;
+      }),
+    );
 
     if (partners[0]) {
       return partners[0];
@@ -179,37 +195,55 @@ export async function createReferralLead({
   partnerId,
   name,
   email,
+  phone,
   launchTiming,
   inquiryType,
+  smsConsent,
+  smsConsentAt,
+  smsConsentDisclosureVersion,
 }: {
   partnerId: string;
   name: string;
   email: string;
+  phone: string;
   launchTiming: string;
   inquiryType: "call" | "overview";
+  smsConsent: boolean;
+  smsConsentAt: string | null;
+  smsConsentDisclosureVersion: string;
 }) {
   await ensureReferralSchema();
   const sql = getDatabase();
-  const leads = asRows<ReferralLead>(await sql`
-    INSERT INTO referral_leads (id, partner_id, name, email, launch_timing, inquiry_type)
+  const leads = asRows<ReferralLead>(
+    await sql`
+    INSERT INTO referral_leads (
+      id, partner_id, name, email, phone, launch_timing, inquiry_type,
+      sms_consent, sms_consent_at, sms_consent_disclosure_version
+    )
     VALUES (
       ${randomUUID()}, ${partnerId}, ${name.trim()}, ${email.trim().toLowerCase()},
-      ${launchTiming.trim()}, ${inquiryType}
+      ${phone}, ${launchTiming.trim()}, ${inquiryType}, ${smsConsent},
+      ${smsConsentAt}, ${smsConsentDisclosureVersion}
     )
-    RETURNING id, partner_id, name, email, launch_timing, inquiry_type, created_at, status, qualified_at
-  `);
+    RETURNING id, partner_id, name, email, phone, launch_timing, inquiry_type, created_at,
+      status, qualified_at, sms_consent, sms_consent_at, sms_consent_disclosure_version
+  `,
+  );
   return leads[0];
 }
 
 export async function getPartnerReferralLeads(partnerId: string) {
   await ensureReferralSchema();
   const sql = getDatabase();
-  return asRows<ReferralLead>(await sql`
-    SELECT id, partner_id, name, email, launch_timing, inquiry_type, created_at, status, qualified_at
+  return asRows<ReferralLead>(
+    await sql`
+    SELECT id, partner_id, name, email, phone, launch_timing, inquiry_type, created_at, status,
+      qualified_at, sms_consent, sms_consent_at, sms_consent_disclosure_version
     FROM referral_leads
     WHERE partner_id = ${partnerId}
     ORDER BY created_at DESC
-  `);
+  `,
+  );
 }
 
 export async function getReferralPartnersWithCounts() {
@@ -221,7 +255,8 @@ export async function getReferralPartnersWithCounts() {
       pending_leads: number;
       qualified_leads: number;
     }
-  >(await sql`
+  >(
+    await sql`
     SELECT
       p.id, p.name, p.email, p.referral_code, p.created_at,
       COUNT(l.id)::int AS total_leads,
@@ -231,33 +266,43 @@ export async function getReferralPartnersWithCounts() {
     LEFT JOIN referral_leads l ON l.partner_id = p.id
     GROUP BY p.id
     ORDER BY p.created_at DESC
-  `);
+  `,
+  );
 }
 
 export async function getAllReferralLeads() {
   await ensureReferralSchema();
   const sql = getDatabase();
-  return asRows<ReferralLead>(await sql`
+  return asRows<ReferralLead>(
+    await sql`
     SELECT
-      l.id, l.partner_id, p.name AS partner_name, l.name, l.email, l.launch_timing,
-      l.inquiry_type, l.created_at, l.status, l.qualified_at
+      l.id, l.partner_id, p.name AS partner_name, l.name, l.email, l.phone, l.launch_timing,
+      l.inquiry_type, l.created_at, l.status, l.qualified_at, l.sms_consent,
+      l.sms_consent_at, l.sms_consent_disclosure_version
     FROM referral_leads l
     INNER JOIN referral_partners p ON p.id = l.partner_id
     ORDER BY l.created_at DESC
-  `);
+  `,
+  );
 }
 
-export async function updateReferralLeadStatus(id: string, status: ReferralStatus) {
+export async function updateReferralLeadStatus(
+  id: string,
+  status: ReferralStatus,
+) {
   await ensureReferralSchema();
   const sql = getDatabase();
-  const leads = asRows<ReferralLead>(await sql`
+  const leads = asRows<ReferralLead>(
+    await sql`
     UPDATE referral_leads
     SET
       status = ${status},
       qualified_at = CASE WHEN ${status} = 'qualified' THEN NOW() ELSE NULL END
     WHERE id = ${id}
-    RETURNING id, partner_id, name, email, launch_timing, inquiry_type, created_at, status, qualified_at
-  `);
+    RETURNING id, partner_id, name, email, phone, launch_timing, inquiry_type, created_at,
+      status, qualified_at, sms_consent, sms_consent_at, sms_consent_disclosure_version
+  `,
+  );
   return leads[0] ?? null;
 }
 

@@ -6,6 +6,11 @@ import {
   findReferralPartnerByCode,
   referralAttributionCookie,
 } from "@/lib/referrals";
+import {
+  normalizeInternationalPhone,
+  parseSmsConsent,
+  smsConsentDisclosureVersion,
+} from "@/lib/lead";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const redditPixelId = "a2_ipmxh3ti5t5m";
@@ -46,11 +51,31 @@ function getCookie(request: Request, name: string) {
   return value ? decodeURIComponent(value) : undefined;
 }
 
-async function trackRedditLead(request: Request, email: string, eventSourceUrl: string) {
+function getSafeEventSourceUrl(request: Request, submittedUrl: unknown) {
+  const requestUrl = new URL(request.url);
+  const candidate = getText(submittedUrl);
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.origin === requestUrl.origin) {
+      return `${parsed.origin}${parsed.pathname}`;
+    }
+  } catch {
+    // Fall back to the request origin without reflecting submitted data.
+  }
+  return requestUrl.origin;
+}
+
+async function trackRedditLead(
+  request: Request,
+  email: string,
+  eventSourceUrl: string,
+) {
   const accessToken = process.env.REDDIT_CONVERSION_ACCESS_TOKEN;
 
   if (!accessToken) {
-    console.error("Strategy-call form is missing Reddit conversion configuration.");
+    console.error(
+      "Strategy-call form is missing Reddit conversion configuration.",
+    );
     return;
   }
 
@@ -115,10 +140,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid submission." }, { status: 400 });
   }
 
-  const { name, email, inquiryType: submittedInquiryType, launchTiming, eventSourceUrl } = payload as Record<
-    string,
-    unknown
-  >;
+  const {
+    name,
+    email,
+    phone,
+    locale,
+    smsConsent,
+    smsConsentDisclosureVersion: submittedDisclosureVersion,
+    inquiryType: submittedInquiryType,
+    launchTiming,
+    eventSourceUrl,
+  } = payload as Record<string, unknown>;
   const inquiryType: "call" | "overview" =
     getText(submittedInquiryType) === "overview" ? "overview" : "call";
   const lead: {
@@ -126,17 +158,49 @@ export async function POST(request: Request) {
     email: string;
     inquiryType: "call" | "overview";
     launchTiming: string;
+    phone: string;
+    smsConsent: boolean;
+    smsConsentAt: string | null;
+    smsConsentDisclosureVersion: string;
   } = {
     name: getText(name),
     email: getText(email),
     inquiryType,
     launchTiming: getText(launchTiming),
+    phone: normalizeInternationalPhone(phone) ?? "",
+    smsConsent: parseSmsConsent(smsConsent),
+    smsConsentAt: null,
+    smsConsentDisclosureVersion,
   };
-  const sourceUrl = getText(eventSourceUrl);
+  if (lead.smsConsent) {
+    lead.smsConsentAt = new Date().toISOString();
+  }
+  const sourceUrl = getSafeEventSourceUrl(request, eventSourceUrl);
+  const isSpanish = getText(locale) === "es";
 
-  if (!lead.name || !emailPattern.test(lead.email) || !lead.launchTiming) {
+  if (
+    !lead.name ||
+    !emailPattern.test(lead.email) ||
+    !lead.launchTiming ||
+    !lead.phone
+  ) {
     return NextResponse.json(
-      { error: "Enter your name, a valid work email, and launch timing." },
+      {
+        error: isSpanish
+          ? "Ingresa tu nombre, un email de trabajo válido, un número móvil internacional y el plazo de lanzamiento."
+          : "Enter your name, a valid work email, an international mobile number, and launch timing.",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (getText(submittedDisclosureVersion) !== smsConsentDisclosureVersion) {
+    return NextResponse.json(
+      {
+        error: isSpanish
+          ? "Actualiza la página y vuelve a enviarla."
+          : "Please refresh the page and submit again.",
+      },
       { status: 400 },
     );
   }
@@ -147,7 +211,9 @@ export async function POST(request: Request) {
   const calendarUrl = process.env.CALENDLY_EVENT_URL;
 
   if (!apiKey || !from || !to || !calendarUrl) {
-    console.error("Strategy-call form is missing email or calendar configuration.");
+    console.error(
+      "Strategy-call form is missing email or calendar configuration.",
+    );
     return NextResponse.json(
       { error: "The strategy-call form is temporarily unavailable." },
       { status: 503 },
@@ -164,7 +230,11 @@ export async function POST(request: Request) {
       <h1>New Pryzr Studio ${lead.inquiryType === "overview" ? "launch-readiness overview request" : "strategy-call request"}</h1>
       <p><strong>Name:</strong> ${escapeHtml(lead.name)}</p>
       <p><strong>Email:</strong> ${escapeHtml(lead.email)}</p>
+      <p><strong>Mobile phone:</strong> ${escapeHtml(lead.phone)}</p>
       <p><strong>Launch timing:</strong> ${escapeHtml(lead.launchTiming)}</p>
+      <p><strong>SMS consent:</strong> ${lead.smsConsent ? "Yes" : "No"}</p>
+      <p><strong>SMS consent timestamp:</strong> ${lead.smsConsentAt ? escapeHtml(lead.smsConsentAt) : "Not applicable"}</p>
+      <p><strong>SMS disclosure version:</strong> ${escapeHtml(lead.smsConsentDisclosureVersion)}</p>
     `,
   });
 
@@ -187,8 +257,12 @@ export async function POST(request: Request) {
           partnerId: partner.id,
           name: lead.name,
           email: lead.email,
+          phone: lead.phone,
           launchTiming: lead.launchTiming,
           inquiryType: lead.inquiryType,
+          smsConsent: lead.smsConsent,
+          smsConsentAt: lead.smsConsentAt,
+          smsConsentDisclosureVersion: lead.smsConsentDisclosureVersion,
         });
       }
     } catch (error) {
@@ -203,5 +277,7 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json(lead.inquiryType === "overview" ? { submitted: true } : { calendarUrl });
+  return NextResponse.json(
+    lead.inquiryType === "overview" ? { submitted: true } : { calendarUrl },
+  );
 }
